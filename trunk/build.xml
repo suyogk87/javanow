@@ -1,0 +1,115 @@
+<project name="JavaNow" default="jar" basedir=".">
+  <property file="build.properties"/>
+  <property name="build" value="${basedir}/target/classes"/>
+  <property name="dist" value="${basedir}/dist"/>
+
+
+  <!-- =================================================================== -->
+  <!-- init task - setup environment 					   -->
+  <!-- =================================================================== -->
+  <target name="init">
+    <path id="build.classpath">
+      <pathelement path="${build}"/>
+      <fileset dir="${basedir}/lib">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
+    <mkdir dir="${build}"/>
+  </target>
+
+
+  <target name="clean">
+      <delete dir="target/"/>
+      <delete dir="dist"/>
+  </target>
+
+  <target name="compile" depends="init"> 
+    	  <javac destdir="${build}" 
+        	deprecation="off" 
+        	debug="on" 
+        	source="1.5"
+        	target="1.5"
+        	verbose="true"
+        	failonerror="on">
+      	<src path="src/main/java"/>
+      	<classpath refid="build.classpath"/>
+       	<include name="**/*.java"/>
+    	</javac>  
+  </target>
+
+
+  <target name="dist" depends="jar,zipjavadoc"> 
+    <mkdir dir="${dist}"/>
+    <zip destfile="dist/JavaNow-${javanow.version}-src.zip"
+       basedir=".."
+       includes="**/*"
+       excludes="**/.svn/*, **/dist, **/www/**, **/*.sh, **/extra/**"
+    />
+    <delete file="dist/JavaNow-${javanow.version}-bin.zip"/>
+    <zip destfile="dist/JavaNow-${javanow.version}-bin.zip"
+       basedir=".."
+       includes="**/*.jar, **/*.xml, **/*.properties"
+       excludes="**/samples/**"
+    />
+    <copy tofile="dist/JavaNow-${javanow.version}-docs.zip" file="target/javadocs.zip"/>
+  </target>
+
+
+  <target name="compile-test" depends="init"> 
+    <javac destdir="${build}" 
+        deprecation="off" 
+        debug="on" 
+        source="1.5"
+        target="1.5"
+        failonerror="on">
+      <src path="src/test/java"/>
+      <classpath refid="build.classpath"/>
+      <include name="**/*.java"/>
+    </javac>  
+  </target>
+
+  <target name="test" depends="compile-test"> 
+    <mkdir dir="junit_out"/>
+    <junit printsummary="yes" fork="yes" forkmode="once">
+            <sysproperty key="logfile" value="javanow.log"/>
+            <sysproperty key="javanow.base.dir" value="${user.home}"/>
+            <sysproperty key="${net.sourceforge.cobertura.datafile}"
+                file="${basedir}/cobertura.ser" />
+            <formatter type="xml"/>
+            <formatter type="brief" usefile="false"/>
+            <jvmarg value="-Dxx.props=/dev/null"/>
+            <classpath>
+                <pathelement path="${cobertura.build}"/>
+                <path refid="build.classpath"/>
+            </classpath>
+            <batchtest fork="yes" todir="${basedir}/junit_out">
+                <fileset dir="${cobertura.build}">
+                    <include name="**/*Test.class"/>
+                </fileset>
+                <fileset dir="${build}">
+                    <include name="**/*Test.class"/>
+                </fileset>
+            </batchtest>
+     </junit>
+     <junitreport todir="${basedir}/junit_out">
+	  <fileset dir="${basedir}/junit_out">
+	    <include name="TEST-*.xml"/>
+	  </fileset>
+	  <report format="frames" todir="${basedir}/junit_out"/>
+     </junitreport>
+  </target>
+
+  <target name="junitdoclet" depends="compile">
+        <javadoc
+            packagenames="com.*"
+            defaultexcludes="yes"
+            doclet="com.objectfab.tools.junitdoclet.JUnitDoclet"
+            docletpathref="build.classpath"
+            additionalparam="-d src/test/java -buildall -source 1.4">
+      	    <classpath refid="build.classpath"/>
+    <packageset dir="src/main/java" defaultexcludes="yes">
+      <include name="com/plexobject/javanow/**"/>
+    </packageset>
+    </javadoc>
+  </target>
+</project>
